@@ -1,0 +1,75 @@
+---
+title: "Predicting how well an activity was performed"
+author: "Stepan Kuzmin"
+date: '5 июня 2016 г '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify _how much_ of a particular activity they do, but they rarely quantify _how well_ they do it.
+
+The goal of this project is to predict the manner in which 6 participants did the barbell lifts using data from their accelerometers on the belt, forearm, arm, and dumbell.
+
+# Input data
+
+This project uses [Human Activity Recognition Weight Lifting Exercises dataset](http://groupware.les.inf.puc-rio.br/har). Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+library(caret)
+```
+
+```{r, message=FALSE, warning=FALSE, cache=TRUE}
+data <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"),  na.strings=c("NA", "#DIV/0!", ""))
+data <- tbl_df(data) %>% select(-(1:5))
+dim(data)
+```
+
+
+```{r}
+mostlyNA <- sapply(data, function(x) mean(is.na(x))) > 0.95
+newData <- data %>% select(-c(mostlyNA, nearZeroVar(data)))
+numericData <- newData %>% select(which(sapply(., is.numeric)))
+preprocessedData <- preProcess(numericData, method=c('knnImpute', 'center', 'scale'))
+numericData <- predict(preprocessedData, numericData)
+processedData <- full_join(newData, numericData)
+```
+
+Remove zero- or near-zero predictors and highly correlated variables
+
+```{r, cache=TRUE}
+cleanData <- processedData %>% select(-findCorrelation(numericData))
+dim(cleanData)
+```
+
+Create cross validation set
+
+```{r}
+set.seed(123456)
+inTrain <- createDataPartition(y=cleanData$classe, p=0.75, list=F)
+training <- cleanData[inTrain, ]
+testing <- cleanData[-inTrain, ]
+dim(training)
+```
+
+# Algorithm
+
+```{r, cache=TRUE}
+# modFit <- train(classe ~ ., data=training, preProcess=c("knnImpute", "center", "scale"), allowParallel=T, na.action=na.pass, method="rf")
+
+# modFit <- train(classe ~ ., data=training, allowParallel=T, method="rf", na.action=na.omit)
+
+# confusionMatrix(testing$classe, predict(modFit, testing))
+
+# confusionMatrix(testing$classe, predict(modFit, testing, na.action=na.omit))
+# confusionMatrix(testing$classe, predict(modFit, testing, na.action=na.pass))
+```
+
+# Parameters
+
+# Evaluation
