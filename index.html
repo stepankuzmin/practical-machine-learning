@@ -125,14 +125,16 @@ $(document).ready(function () {
 <div id="question" class="section level1">
 <h1>Question</h1>
 <p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify <em>how much</em> of a particular activity they do, but they rarely quantify <em>how well</em> they do it.</p>
-<p>The goal of this project is to predict the manner in which 6 participants did the barbell lifts using data from their accelerometers on the belt, forearm, arm, and dumbell.</p>
+<p><strong>The goal of this project is to predict the manner in which 6 participants did the barbell lifts using data from their accelerometers on the belt, forearm, arm, and dumbell.</strong></p>
 </div>
 <div id="input-data" class="section level1">
 <h1>Input data</h1>
 <p>This project uses <a href="http://groupware.les.inf.puc-rio.br/har">Human Activity Recognition Weight Lifting Exercises dataset</a>. Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).</p>
 <pre class="r"><code>library(dplyr)
-library(caret)</code></pre>
-<pre class="r"><code>data &lt;- read.csv(url(&quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv&quot;),  na.strings=c(&quot;NA&quot;, &quot;#DIV/0!&quot;, &quot;&quot;))
+library(caret)
+library(randomForest)</code></pre>
+<pre class="r"><code>data &lt;- read.csv(url(&quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv&quot;),
+                 na.strings=c(&quot;NA&quot;, &quot;#DIV/0!&quot;, &quot;&quot;))
 data &lt;- tbl_df(data)
 dim(data)</code></pre>
 <pre><code>## [1] 19622   160</code></pre>
@@ -140,7 +142,7 @@ dim(data)</code></pre>
 <pre class="r"><code>newData &lt;- data %&gt;% select(-c((1:5), which(colMeans(is.na(.)) &gt; 0.95), nearZeroVar(data)))</code></pre>
 <p>Select numeric columns</p>
 <pre class="r"><code>numericData &lt;- newData %&gt;% select(which(sapply(., is.numeric)))</code></pre>
-<p>Impute missing values using knnImpute</p>
+<p>Impute missing values using <code>knnImpute</code></p>
 <pre class="r"><code>preprocessedData &lt;- preProcess(numericData, method=c('knnImpute', 'center', 'scale'))
 numericData &lt;- predict(preprocessedData, numericData)
 processedData &lt;- full_join(newData, numericData)</code></pre>
@@ -160,20 +162,9 @@ dim(training)</code></pre>
 </div>
 <div id="algorithm" class="section level1">
 <h1>Algorithm</h1>
-<p>Let’s start with a Random Forest model, to see if it would have acceptable performance. Fit the model on <code>training</code> dataset, and instruct the <code>train</code> function to use 3-fold cross-validation to select optimal tuning parameters for the model.</p>
+<p>Use a random forest model, for its accuracy and acceptable performance. Fit the model on <code>training</code> dataset, and instruct the <code>train</code> function to use 3-fold cross-validation to select optimal tuning parameters for the model.</p>
 <pre class="r"><code>fitControl &lt;- trainControl(method=&quot;cv&quot;, number=3, verboseIter=F)
 modFit &lt;- train(classe ~ ., data=training, allowParallel=T, trControl=fitControl, method=&quot;rf&quot;)</code></pre>
-<pre><code>## Loading required package: randomForest</code></pre>
-<pre><code>## randomForest 4.6-12</code></pre>
-<pre><code>## Type rfNews() to see new features/changes/bug fixes.</code></pre>
-<pre><code>## 
-## Attaching package: 'randomForest'</code></pre>
-<pre><code>## The following object is masked from 'package:ggplot2':
-## 
-##     margin</code></pre>
-<pre><code>## The following object is masked from 'package:dplyr':
-## 
-##     combine</code></pre>
 <pre class="r"><code>modFit</code></pre>
 <pre><code>## Random Forest 
 ## 
@@ -225,13 +216,18 @@ modFit &lt;- train(classe ~ ., data=training, allowParallel=T, trControl=fitCont
 ## Detection Rate         0.2845   0.1929   0.1739   0.1635   0.1837
 ## Detection Prevalence   0.2845   0.1935   0.1743   0.1639   0.1837
 ## Balanced Accuracy      0.9996   0.9986   0.9974   0.9998   1.0000</code></pre>
-<p>So the overall accuracy for Random Forest model is <code>0.998</code>.</p>
-</div>
-<div id="parameters" class="section level1">
-<h1>Parameters</h1>
+<p>The overall accuracy for random forest model is <strong>0.998</strong>.</p>
 </div>
 <div id="evaluation" class="section level1">
 <h1>Evaluation</h1>
+<p>Predict test dataset</p>
+<pre class="r"><code>testingData &lt;- read.csv(url(&quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv&quot;),
+                        na.strings=c(&quot;NA&quot;, &quot;#DIV/0!&quot;, &quot;&quot;))
+testingData$classe &lt;- NA
+cleanTestingData &lt;- testingData %&gt;% select(match(colnames(cleanData), names(.)))</code></pre>
+<pre class="r"><code>print(predict(modFit, newdata=cleanTestingData))</code></pre>
+<pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
+## Levels: A B C D E</code></pre>
 </div>
 
 

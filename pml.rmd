@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify _how much_ of a particular activity they do, but they rarely quantify _how well_ they do it.
 
-The goal of this project is to predict the manner in which 6 participants did the barbell lifts using data from their accelerometers on the belt, forearm, arm, and dumbell.
+__The goal of this project is to predict the manner in which 6 participants did the barbell lifts using data from their accelerometers on the belt, forearm, arm, and dumbell.__
 
 # Input data
 
@@ -22,10 +22,12 @@ This project uses [Human Activity Recognition Weight Lifting Exercises dataset](
 ```{r, message=FALSE, warning=FALSE}
 library(dplyr)
 library(caret)
+library(randomForest)
 ```
 
 ```{r, message=FALSE, warning=FALSE, cache=TRUE}
-data <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"),  na.strings=c("NA", "#DIV/0!", ""))
+data <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"),
+                 na.strings=c("NA", "#DIV/0!", ""))
 data <- tbl_df(data)
 dim(data)
 ```
@@ -42,7 +44,7 @@ Select numeric columns
 numericData <- newData %>% select(which(sapply(., is.numeric)))
 ```
 
-Impute missing values using knnImpute
+Impute missing values using `knnImpute`
 
 ```{r, message=FALSE, warning=FALSE, cache=TRUE}
 preprocessedData <- preProcess(numericData, method=c('knnImpute', 'center', 'scale'))
@@ -70,20 +72,31 @@ dim(training)
 
 # Algorithm
 
-Let's start with a Random Forest model, to see if it would have acceptable performance. Fit the model on `training` dataset, and instruct the `train` function to use 3-fold cross-validation to select optimal tuning parameters for the model.
+Use a random forest model, for its accuracy and acceptable performance. Fit the model on `training` dataset, and instruct the `train` function to use 3-fold cross-validation to select optimal tuning parameters for the model.
 
-```{r, cache=TRUE}
+```{r, message=FALSE, warning=FALSE, cache=TRUE}
 fitControl <- trainControl(method="cv", number=3, verboseIter=F)
 modFit <- train(classe ~ ., data=training, allowParallel=T, trControl=fitControl, method="rf")
-modFit
 ```
 
-```{r, cache=TRUE}
+```{r}
+modFit
 confusionMatrix(testing$classe, predict(modFit, testing))
 ```
 
-The overall accuracy for Random Forest model is `0.998`.
-
-# Parameters
+The overall accuracy for random forest model is __0.998__.
 
 # Evaluation
+
+Predict test dataset
+
+```{r, message=FALSE, warning=FALSE, cache=TRUE}
+testingData <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"),
+                        na.strings=c("NA", "#DIV/0!", ""))
+testingData$classe <- NA
+cleanTestingData <- testingData %>% select(match(colnames(cleanData), names(.)))
+```
+
+```{r}
+print(predict(modFit, newdata=cleanTestingData))
+```
