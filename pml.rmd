@@ -26,25 +26,36 @@ library(caret)
 
 ```{r, message=FALSE, warning=FALSE, cache=TRUE}
 data <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"),  na.strings=c("NA", "#DIV/0!", ""))
-data <- tbl_df(data) %>% select(-(1:5))
+data <- tbl_df(data)
 dim(data)
 ```
 
+Remove first 5 columns, that not make any intuitive sense, columns that contains mostly NA's and zero- or near-zero predictors
+
+```{r, message=FALSE, warning=FALSE, cache=TRUE}
+newData <- data %>% select(-c((1:5), which(colMeans(is.na(.)) > 0.95), nearZeroVar(data)))
+```
+
+Select numeric columns
 
 ```{r}
-mostlyNA <- sapply(data, function(x) mean(is.na(x))) > 0.95
-newData <- data %>% select(-c(mostlyNA, nearZeroVar(data)))
 numericData <- newData %>% select(which(sapply(., is.numeric)))
+```
+
+Impute missing values using knnImpute
+
+```{r, message=FALSE, warning=FALSE, cache=TRUE}
 preprocessedData <- preProcess(numericData, method=c('knnImpute', 'center', 'scale'))
 numericData <- predict(preprocessedData, numericData)
 processedData <- full_join(newData, numericData)
 ```
 
-Remove zero- or near-zero predictors and highly correlated variables
+Remove highly correlated variables and all observations with missing predicting variable
 
-```{r, cache=TRUE}
-cleanData <- processedData %>% select(-findCorrelation(numericData))
+```{r, message=FALSE, warning=FALSE, cache=TRUE}
+cleanData <- processedData %>% select(-findCorrelation(cor(numericData))) %>% filter(!is.na(classe))
 dim(cleanData)
+sum(is.na(cleanData$classe))
 ```
 
 Create cross validation set
@@ -59,16 +70,19 @@ dim(training)
 
 # Algorithm
 
+Let's start with a Random Forest model, to see if it would have acceptable performance. Fit the model on `training` dataset, and instruct the `train` function to use 3-fold cross-validation to select optimal tuning parameters for the model.
+
 ```{r, cache=TRUE}
-# modFit <- train(classe ~ ., data=training, preProcess=c("knnImpute", "center", "scale"), allowParallel=T, na.action=na.pass, method="rf")
-
-# modFit <- train(classe ~ ., data=training, allowParallel=T, method="rf", na.action=na.omit)
-
-# confusionMatrix(testing$classe, predict(modFit, testing))
-
-# confusionMatrix(testing$classe, predict(modFit, testing, na.action=na.omit))
-# confusionMatrix(testing$classe, predict(modFit, testing, na.action=na.pass))
+fitControl <- trainControl(method="cv", number=3, verboseIter=F)
+modFit <- train(classe ~ ., data=training, allowParallel=T, trControl=fitControl, method="rf")
+modFit
 ```
+
+```{r, cache=TRUE}
+confusionMatrix(testing$classe, predict(modFit, testing))
+```
+
+The overall accuracy for Random Forest model is `0.998`.
 
 # Parameters
 

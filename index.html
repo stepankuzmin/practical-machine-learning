@@ -133,38 +133,99 @@ $(document).ready(function () {
 <pre class="r"><code>library(dplyr)
 library(caret)</code></pre>
 <pre class="r"><code>data &lt;- read.csv(url(&quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv&quot;),  na.strings=c(&quot;NA&quot;, &quot;#DIV/0!&quot;, &quot;&quot;))
-data &lt;- tbl_df(data) %&gt;% select(-(1:5))
+data &lt;- tbl_df(data)
 dim(data)</code></pre>
-<pre><code>## [1] 19622   155</code></pre>
-<pre class="r"><code>mostlyNA &lt;- sapply(data, function(x) mean(is.na(x))) &gt; 0.95
-newData &lt;- data %&gt;% select(-c(mostlyNA, nearZeroVar(data)))
-numericData &lt;- newData %&gt;% select(which(sapply(., is.numeric)))
-preprocessedData &lt;- preProcess(numericData, method=c('knnImpute', 'center', 'scale'))
+<pre><code>## [1] 19622   160</code></pre>
+<p>Remove first 5 columns, that not make any intuitive sense, columns that contains mostly NA’s and zero- or near-zero predictors</p>
+<pre class="r"><code>newData &lt;- data %&gt;% select(-c((1:5), which(colMeans(is.na(.)) &gt; 0.95), nearZeroVar(data)))</code></pre>
+<p>Select numeric columns</p>
+<pre class="r"><code>numericData &lt;- newData %&gt;% select(which(sapply(., is.numeric)))</code></pre>
+<p>Impute missing values using knnImpute</p>
+<pre class="r"><code>preprocessedData &lt;- preProcess(numericData, method=c('knnImpute', 'center', 'scale'))
 numericData &lt;- predict(preprocessedData, numericData)
 processedData &lt;- full_join(newData, numericData)</code></pre>
-<pre><code>## Joining by: c(&quot;num_window&quot;, &quot;roll_belt&quot;, &quot;pitch_belt&quot;, &quot;yaw_belt&quot;, &quot;total_accel_belt&quot;, &quot;kurtosis_roll_belt&quot;, &quot;kurtosis_picth_belt&quot;, &quot;skewness_roll_belt&quot;, &quot;skewness_roll_belt.1&quot;, &quot;max_roll_belt&quot;, &quot;max_picth_belt&quot;, &quot;max_yaw_belt&quot;, &quot;min_roll_belt&quot;, &quot;min_pitch_belt&quot;, &quot;min_yaw_belt&quot;, &quot;amplitude_roll_belt&quot;, &quot;amplitude_pitch_belt&quot;, &quot;var_total_accel_belt&quot;, &quot;avg_roll_belt&quot;, &quot;stddev_roll_belt&quot;, &quot;var_roll_belt&quot;, &quot;avg_pitch_belt&quot;, &quot;stddev_pitch_belt&quot;, &quot;var_pitch_belt&quot;, &quot;avg_yaw_belt&quot;, &quot;stddev_yaw_belt&quot;, &quot;var_yaw_belt&quot;, &quot;gyros_belt_x&quot;, &quot;gyros_belt_y&quot;, &quot;gyros_belt_z&quot;, &quot;accel_belt_x&quot;, &quot;accel_belt_y&quot;, &quot;accel_belt_z&quot;, &quot;magnet_belt_x&quot;, &quot;magnet_belt_y&quot;, &quot;magnet_belt_z&quot;, &quot;roll_arm&quot;, &quot;pitch_arm&quot;, &quot;yaw_arm&quot;, &quot;total_accel_arm&quot;, &quot;var_accel_arm&quot;, &quot;gyros_arm_x&quot;, &quot;gyros_arm_y&quot;, &quot;gyros_arm_z&quot;, &quot;accel_arm_x&quot;, &quot;accel_arm_y&quot;, &quot;accel_arm_z&quot;, &quot;magnet_arm_x&quot;, &quot;magnet_arm_y&quot;, &quot;magnet_arm_z&quot;, &quot;kurtosis_roll_arm&quot;, &quot;kurtosis_picth_arm&quot;, &quot;kurtosis_yaw_arm&quot;, &quot;skewness_roll_arm&quot;, &quot;skewness_pitch_arm&quot;, &quot;skewness_yaw_arm&quot;, &quot;max_picth_arm&quot;, &quot;max_yaw_arm&quot;, &quot;min_yaw_arm&quot;, &quot;amplitude_yaw_arm&quot;, &quot;roll_dumbbell&quot;, &quot;pitch_dumbbell&quot;, &quot;yaw_dumbbell&quot;, &quot;kurtosis_roll_dumbbell&quot;, &quot;kurtosis_picth_dumbbell&quot;, &quot;skewness_roll_dumbbell&quot;, &quot;skewness_pitch_dumbbell&quot;, &quot;max_roll_dumbbell&quot;, &quot;max_picth_dumbbell&quot;, &quot;max_yaw_dumbbell&quot;, &quot;min_roll_dumbbell&quot;, &quot;min_pitch_dumbbell&quot;, &quot;min_yaw_dumbbell&quot;, &quot;amplitude_roll_dumbbell&quot;, &quot;amplitude_pitch_dumbbell&quot;, &quot;total_accel_dumbbell&quot;, &quot;var_accel_dumbbell&quot;, &quot;avg_roll_dumbbell&quot;, &quot;stddev_roll_dumbbell&quot;, &quot;var_roll_dumbbell&quot;, &quot;avg_pitch_dumbbell&quot;, &quot;stddev_pitch_dumbbell&quot;, &quot;var_pitch_dumbbell&quot;, &quot;avg_yaw_dumbbell&quot;, &quot;stddev_yaw_dumbbell&quot;, &quot;var_yaw_dumbbell&quot;, &quot;gyros_dumbbell_x&quot;, &quot;gyros_dumbbell_y&quot;, &quot;gyros_dumbbell_z&quot;, &quot;accel_dumbbell_x&quot;, &quot;accel_dumbbell_y&quot;, &quot;accel_dumbbell_z&quot;, &quot;magnet_dumbbell_x&quot;, &quot;magnet_dumbbell_y&quot;, &quot;magnet_dumbbell_z&quot;, &quot;roll_forearm&quot;, &quot;pitch_forearm&quot;, &quot;yaw_forearm&quot;, &quot;kurtosis_roll_forearm&quot;, &quot;kurtosis_picth_forearm&quot;, &quot;skewness_roll_forearm&quot;, &quot;skewness_pitch_forearm&quot;, &quot;max_picth_forearm&quot;, &quot;max_yaw_forearm&quot;, &quot;min_pitch_forearm&quot;, &quot;min_yaw_forearm&quot;, &quot;amplitude_pitch_forearm&quot;, &quot;total_accel_forearm&quot;, &quot;var_accel_forearm&quot;, &quot;gyros_forearm_x&quot;, &quot;gyros_forearm_y&quot;, &quot;gyros_forearm_z&quot;, &quot;accel_forearm_x&quot;, &quot;accel_forearm_y&quot;, &quot;accel_forearm_z&quot;, &quot;magnet_forearm_x&quot;, &quot;magnet_forearm_y&quot;, &quot;magnet_forearm_z&quot;)</code></pre>
-<p>Remove zero- or near-zero predictors and highly correlated variables</p>
-<pre class="r"><code>cleanData &lt;- processedData %&gt;% select(-findCorrelation(numericData))
+<p>Remove highly correlated variables and all observations with missing predicting variable</p>
+<pre class="r"><code>cleanData &lt;- processedData %&gt;% select(-findCorrelation(cor(numericData))) %&gt;% filter(!is.na(classe))
 dim(cleanData)</code></pre>
-<pre><code>## [1] 39244    33</code></pre>
+<pre><code>## [1] 19622    47</code></pre>
+<pre class="r"><code>sum(is.na(cleanData$classe))</code></pre>
+<pre><code>## [1] 0</code></pre>
 <p>Create cross validation set</p>
 <pre class="r"><code>set.seed(123456)
 inTrain &lt;- createDataPartition(y=cleanData$classe, p=0.75, list=F)
 training &lt;- cleanData[inTrain, ]
 testing &lt;- cleanData[-inTrain, ]
 dim(training)</code></pre>
-<pre><code>## [1] 29435    33</code></pre>
+<pre><code>## [1] 14718    47</code></pre>
 </div>
 <div id="algorithm" class="section level1">
 <h1>Algorithm</h1>
-<pre class="r"><code># modFit &lt;- train(classe ~ ., data=training, preProcess=c(&quot;knnImpute&quot;, &quot;center&quot;, &quot;scale&quot;), allowParallel=T, na.action=na.pass, method=&quot;rf&quot;)
-
-# modFit &lt;- train(classe ~ ., data=training, allowParallel=T, method=&quot;rf&quot;, na.action=na.omit)
-
-# confusionMatrix(testing$classe, predict(modFit, testing))
-
-# confusionMatrix(testing$classe, predict(modFit, testing, na.action=na.omit))
-# confusionMatrix(testing$classe, predict(modFit, testing, na.action=na.pass))</code></pre>
+<p>Let’s start with a Random Forest model, to see if it would have acceptable performance. Fit the model on <code>training</code> dataset, and instruct the <code>train</code> function to use 3-fold cross-validation to select optimal tuning parameters for the model.</p>
+<pre class="r"><code>fitControl &lt;- trainControl(method=&quot;cv&quot;, number=3, verboseIter=F)
+modFit &lt;- train(classe ~ ., data=training, allowParallel=T, trControl=fitControl, method=&quot;rf&quot;)</code></pre>
+<pre><code>## Loading required package: randomForest</code></pre>
+<pre><code>## randomForest 4.6-12</code></pre>
+<pre><code>## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<pre><code>## 
+## Attaching package: 'randomForest'</code></pre>
+<pre><code>## The following object is masked from 'package:ggplot2':
+## 
+##     margin</code></pre>
+<pre><code>## The following object is masked from 'package:dplyr':
+## 
+##     combine</code></pre>
+<pre class="r"><code>modFit</code></pre>
+<pre><code>## Random Forest 
+## 
+## 14718 samples
+##    46 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (3 fold) 
+## Summary of sample sizes: 9812, 9811, 9813 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy   Kappa    
+##    2    0.9918469  0.9896865
+##   24    0.9963311  0.9953595
+##   46    0.9915070  0.9892583
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was mtry = 24.</code></pre>
+<pre class="r"><code>confusionMatrix(testing$classe, predict(modFit, testing))</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1395    0    0    0    0
+##          B    1  946    2    0    0
+##          C    0    2  853    0    0
+##          D    0    0    2  802    0
+##          E    0    0    0    0  901
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.9986          
+##                  95% CI : (0.9971, 0.9994)
+##     No Information Rate : 0.2847          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.9982          
+##  Mcnemar's Test P-Value : NA              
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9993   0.9979   0.9953   1.0000   1.0000
+## Specificity            1.0000   0.9992   0.9995   0.9995   1.0000
+## Pos Pred Value         1.0000   0.9968   0.9977   0.9975   1.0000
+## Neg Pred Value         0.9997   0.9995   0.9990   1.0000   1.0000
+## Prevalence             0.2847   0.1933   0.1748   0.1635   0.1837
+## Detection Rate         0.2845   0.1929   0.1739   0.1635   0.1837
+## Detection Prevalence   0.2845   0.1935   0.1743   0.1639   0.1837
+## Balanced Accuracy      0.9996   0.9986   0.9974   0.9998   1.0000</code></pre>
+<p>So the overall accuracy for Random Forest model is <code>0.998</code>.</p>
 </div>
 <div id="parameters" class="section level1">
 <h1>Parameters</h1>
