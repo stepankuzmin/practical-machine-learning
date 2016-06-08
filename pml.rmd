@@ -85,6 +85,26 @@ confusionMatrix(testing$classe, predict(modFit, testing))
 
 The overall accuracy for random forest model is __0.998__ what is pretty accurate.
 
+# Cross validation
+
+```{r}
+plot(modFit)
+```
+
+The cross validation graph shows that the model with 25 predictors is selected by the best accuracy.
+
+```{r}
+plot(modFit$finalModel)
+```
+
+The final model plot tells that the overall error converge at around 100 trees, so it is possible to speed up our algo by tuning the number of trees.
+
+```{r}
+plot(varImp(modFit), top = 10)
+```
+
+Top ten important variables
+
 # Evaluation
 
 Predict testing dataset
