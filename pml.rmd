@@ -21,6 +21,8 @@ This project uses [Human Activity Recognition Weight Lifting Exercises dataset](
 ```{r, message=FALSE, warning=FALSE}
 library(dplyr)
 library(caret)
+library(rpart)
+library(rattle)
 library(randomForest)
 ```
 
@@ -85,6 +87,23 @@ confusionMatrix(testing$classe, predict(modFit, testing))
 
 The overall accuracy for random forest model is __0.998__ what is pretty accurate.
 
+Use classification tree model for its interpretability.
+
+```{r, message=FALSE, warning=FALSE, cache=TRUE}
+modFit2 <- train(classe ~ ., data=training, method="rpart")
+```
+
+```{r}
+modFit2
+confusionMatrix(testing$classe, predict(modFit2, testing))
+```
+
+The overall accuracy for classification tree model is __0.527__ what is less accurate than random forest model.
+
+```{r}
+fancyRpartPlot(modFit2$finalModel)
+```
+
 # Cross validation
 
 ```{r}
@@ -107,7 +126,7 @@ Top ten important variables
 
 # Evaluation
 
-Predict testing dataset
+Predict testing dataset using random forest model
 
 ```{r, message=FALSE, warning=FALSE, cache=TRUE}
 testingData <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"),
